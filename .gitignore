@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/integration-project-for-college
+integration-project-for-college.so
+integration-project-for-college.dylib
+integration-project-for-college.dll
+integration-project-for-college.a
+integration-project-for-college.lib
+integration-project-for-college-test-*
+*.exe
+*.o
+*.obj
+*.lst

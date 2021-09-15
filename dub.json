@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Doigt"
+	],
+	"copyright": "Copyright © 2021, Doigt",
+	"dependencies": {
+		"raylib-d": "~>3.0.4"
+	},
+	"description": "2.5D shooter written in D with Raylib",
+	"license": "GPL 3.0",
+	"name": "integration-project-for-college",
+	"libs": ["raylib"],
+	"lflags" : ["-L./lib"]
+}
