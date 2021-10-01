@@ -1,5 +1,3 @@
-import std.algorithm.sorting;
-import std.container;
 import std.stdio;
 import std.array;
 import std.math;
@@ -34,27 +32,46 @@ struct Entity
     }
 }
 
+int getBPPMultiplier(Image* img)
+{
+    switch (img.format)
+    {
+        case 2, 3, 5, 6: return 2;
+        case 4: return 3;
+        case 7, 8: return 4;
+        case 9: return 12;
+        case 10: return 16;
+        default: return 1;
+    }
+}
+
 Color getPixel(Image* img, int x, int y)
 {
     if (x < 0 || x > img.width || y < 0 || y > img.height) return Colors.BLACK;
 
     auto data = cast(ubyte*)img.data;
-    auto pixel = data + (y * img.width + x) * 4;
+    auto pixel = data + (y * img.width + x) * getBPPMultiplier(img);
     auto color = GetPixelColor(pixel, img.format);
+
     return color;
 }
 
 void main()
 {
-    // TODO: https://www.youtube.com/watch?v=HEb2akswCcw
+    // TODO: https://youtu.be/HEb2akswCcw?t=1525
     // TODO: https://www.youtube.com/watch?v=NbSee-XM7WA
 
     SetTargetFPS(60);
     const int WINDOW_WIDTH = 640, WINDOW_HEIGHT = 480;
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test");
 
-    auto wallImage = LoadImage("img/bricks2.png");
+    auto wallImage = LoadImage("img/bricks.png");
     ImageResize(&wallImage, 32, 32);
+
+    // Génération d'une image qui va servir de gabarit sur lequel l'écran sera dessiné pixel par pixel
+    auto buffer = GenImageColor(WINDOW_WIDTH, WINDOW_HEIGHT, Colors.WHITE);
+    // Texture qui va prendre l'image plus haut et sera dessiné à partir de la vram pour plus de précision et rapidité
+    auto screen = buffer.LoadTextureFromImage;
 
     Entity player = {2f, 1f, .0f};
     const int MAP_HEIGHT = 16, MAP_WIDTH = 16;
@@ -113,7 +130,7 @@ void main()
 
             while (!hitWall && distanceToWall < depth)
             {
-                distanceToWall += .1f;
+                distanceToWall += .01f;
 
                 auto testX = cast(int)(player.x + eyeX * distanceToWall);
                 auto testY = cast(int)(player.y + eyeY * distanceToWall);
@@ -150,6 +167,8 @@ void main()
 
                         if (testAngle >= raylib.PI * .75f || testAngle < -raylib.PI * .75f)
                             sampleX  = testPoint.y - cast(float)testY;
+
+                        sampleX *= cast(float)wallImage.width;
                     }
                 }
             }
@@ -169,23 +188,30 @@ void main()
 
             for (int y = 0; y < WINDOW_HEIGHT; ++y)
             {
-                if (y <= ceiling) DrawPixel(x, y, ceilingColor);
+                if (y <= ceiling) ImageDrawPixel(&buffer, x, y, ceilingColor);
 
                 else if (y > ceiling && y <= floor)
                 {
                     auto sampleY = cast(float)(y - ceiling) / cast(float)(floor - ceiling);
+                    sampleY *= cast(float)wallImage.height;
+
                     auto wallColor = getPixel(&wallImage, cast(int)sampleX, cast(int)sampleY);
                     wallColor.a -= shade;
-                    DrawPixel(x, y, wallColor);
+
+                    ImageDrawPixel(&buffer, x, y, wallColor);
                 }
 
-                else DrawPixel(x, y, floorColor);
+                else ImageDrawPixel(&buffer, x, y, floorColor);
             }
         }
 
-        //DrawTexture(wallTexture, 0, 0, Colors.WHITE);
+        UpdateTexture(screen, buffer.data);
+        DrawTexture(screen, 0, 0, Colors.WHITE);
         DrawFPS(0, 0);
     }
 
     wallImage.UnloadImage;
+    buffer.UnloadImage;
+
+    screen.UnloadTexture;
 }
