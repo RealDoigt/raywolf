@@ -1,28 +1,65 @@
+import std.algorithm.sorting;
 import std.container;
 import std.stdio;
+import std.array;
 import std.math;
 import raylib;
 
-bool isLower(Vector2* left, Vector2* right) { return left.x < right.y;}
-
-void sort(DList!Vector2* list)
+struct Entity
 {
+    float x, y, angle;
 
+    void move(float speed, byte[][] map, float sign)
+    {
+        x += sign * (angle.sin * speed);
+        y += sign * (angle.cos * speed);
+
+        if (map[cast(int)y][cast(int)x] > 0)
+        {
+            x -= sign * (angle.sin * speed);
+            y -= sign * (angle.cos * speed);
+        }
+    }
+
+    void strafe(float speed, byte[][] map, float sign)
+    {
+        x += sign * (angle.cos * speed);
+        y += sign * (angle.sin * speed);
+
+        if (map[cast(int)y][cast(int)x] > 0)
+        {
+            x -= sign * (angle.cos * speed);
+            y -= sign * (angle.sin * speed);
+        }
+    }
+}
+
+Color getPixel(Image* img, int x, int y)
+{
+    if (x < 0 || x > img.width || y < 0 || y > img.height) return Colors.BLACK;
+
+    auto data = cast(ubyte*)img.data;
+    auto pixel = data + (y * img.width + x) * 4;
+    auto color = GetPixelColor(pixel, img.format);
+    return color;
 }
 
 void main()
 {
+    // TODO: https://www.youtube.com/watch?v=HEb2akswCcw
+    // TODO: https://www.youtube.com/watch?v=NbSee-XM7WA
 
-    const int WINDOW_WIDTH = 640, WINDOW_HEIGHT = 480;
     SetTargetFPS(60);
+    const int WINDOW_WIDTH = 640, WINDOW_HEIGHT = 480;
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test");
 
-    float playerX = 2.0f, playerY = 1.0f, playerAngle = .0f;
+    auto wallImage = LoadImage("img/bricks2.png");
+    ImageResize(&wallImage, 32, 32);
+
+    Entity player = {2f, 1f, .0f};
     const int MAP_HEIGHT = 16, MAP_WIDTH = 16;
 
-    float fieldOfView = 3.1416f / 4f, depth = 16f;
-
-    byte[16][16] map =
+    byte[][] map =
     [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -42,6 +79,7 @@ void main()
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ];
 
+    float fieldOfView = raylib.PI / 4f, depth = 16f;
 
     while (!WindowShouldClose())
     {
@@ -55,74 +93,30 @@ void main()
 
         // Contrôles
         // S'occupe des rotations
-        if (IsKeyDown(KeyboardKey.KEY_LEFT)) playerAngle -= rotationSpeed;
-        if (IsKeyDown(KeyboardKey.KEY_RIGHT)) playerAngle += rotationSpeed;
+        if (IsKeyDown(KeyboardKey.KEY_LEFT)) player.angle -= rotationSpeed;
+        if (IsKeyDown(KeyboardKey.KEY_RIGHT)) player.angle += rotationSpeed;
 
         // La façon que les collisions fonctionnent est qu'on défait ce qui vient d'être fait
-        if (IsKeyDown(KeyboardKey.KEY_W))
-        {
-            playerX += sin(playerAngle) * movementSpeed;
-            playerY += cos(playerAngle) * movementSpeed;
-
-            if (map[cast(int)playerY][cast(int)playerX] > 0)
-            {
-                playerX -= sin(playerAngle) * movementSpeed;
-                playerY -= cos(playerAngle) * movementSpeed;
-            }
-        }
-
-        if (IsKeyDown(KeyboardKey.KEY_S))
-        {
-            playerX -= sin(playerAngle) * movementSpeed;
-            playerY -= cos(playerAngle) * movementSpeed;
-
-            if (map[cast(int)playerY][cast(int)playerX] > 0)
-            {
-                playerX += sin(playerAngle) * movementSpeed;
-                playerY += cos(playerAngle) * movementSpeed;
-            }
-        }
-
-        if (IsKeyDown(KeyboardKey.KEY_A))
-        {
-            playerX -= cos(playerAngle) * movementSpeed;
-            playerY -= sin(playerAngle) * movementSpeed;
-
-            if (map[cast(int)playerY][cast(int)playerX] > 0)
-            {
-                playerX += cos(playerAngle) * movementSpeed;
-                playerY += sin(playerAngle) * movementSpeed;
-            }
-        }
-
-        if (IsKeyDown(KeyboardKey.KEY_D))
-        {
-            playerX += cos(playerAngle) * movementSpeed;
-            playerY += sin(playerAngle) * movementSpeed;
-
-            if (map[cast(int)playerY][cast(int)playerX] > 0)
-            {
-                playerX -= cos(playerAngle) * movementSpeed;
-                playerY -= sin(playerAngle) * movementSpeed;
-            }
-        }
+        if (IsKeyDown(KeyboardKey.KEY_W)) player.move(movementSpeed, map, 1f);
+        if (IsKeyDown(KeyboardKey.KEY_S)) player.move(movementSpeed, map, -1f);
+        if (IsKeyDown(KeyboardKey.KEY_D)) player.strafe(movementSpeed, map, 1f);
+        if (IsKeyDown(KeyboardKey.KEY_A)) player.strafe(movementSpeed, map, -1f);
 
 
         for(int x = 0; x < WINDOW_WIDTH; ++x)
         {
             // pour chaque colonne, calcule l'angle du rayon lancé
-            float rayAngle = (playerAngle - fieldOfView / 2f) + (cast(float)x / cast(float)WINDOW_WIDTH) * fieldOfView;
+            float rayAngle = (player.angle - fieldOfView / 2f) + (cast(float)x / cast(float)WINDOW_WIDTH) * fieldOfView;
+            float distanceToWall = 0f, eyeX = rayAngle.sin, eyeY = rayAngle.cos, sampleX = 0f;
 
-            float distanceToWall = 0f, eyeX = sin(rayAngle), eyeY = cos(rayAngle);
-
-            auto hitWall = false, hitCellEdge = false;
+            auto hitWall = false;
 
             while (!hitWall && distanceToWall < depth)
             {
                 distanceToWall += .1f;
 
-                auto testX = cast(int)(playerX + eyeX * distanceToWall);
-                auto testY = cast(int)(playerY + eyeY * distanceToWall);
+                auto testX = cast(int)(player.x + eyeX * distanceToWall);
+                auto testY = cast(int)(player.y + eyeY * distanceToWall);
 
                 // test si le rayon est rendu à l'extérieur de la carte
                 if (testX < 0 || testX >= MAP_WIDTH || testY < 0 || testY >= MAP_HEIGHT)
@@ -138,22 +132,24 @@ void main()
                     {
                         hitWall = true;
 
-                        auto points = DList!Vector2(); // distance, point (angle entre les vecteurs)
+                        // Détermine où le rayon touche le mur
+                        auto blockMidX = cast(float)testX + .5f, blockMidY = cast(float)testY + .5f;
+                        Vector2 testPoint = {(player.x + eyeX * distanceToWall), (player.y + eyeY * distanceToWall)};
 
-                        for (int xx = 0; xx < 2; ++xx)
-                            for (int yy = 0; yy < 2; ++yy)
-                            {
-                                Vector2 vec = {cast(float)testX + xx - playerX, cast(float)testY + yy - playerY};
+                        auto testAngle = atan2(testPoint.y - blockMidY, testPoint.x - blockMidX);
 
-                                float magnitude = sqrt(vec.x * vec.x + vec.y * vec.y);
-                                float dot = (eyeX * vec.x / magnitude) + (eyeY * vec.y / magnitude);
+                        // quatre côtés, donc quatres angles à tester
+                        if (testAngle >= -raylib.PI * .25f && testAngle < raylib.PI * .25f)
+                            sampleX  = testPoint.y - cast(float)testY;
 
-                                Vector2 point = {magnitude, dot};
-                                points.insertBack(point);
-                            }
+                        if (testAngle >= raylib.PI * .25f && testAngle < raylib.PI * .75f)
+                            sampleX  = testPoint.x - cast(float)testX;
 
-                        // classer les paires du plus proche au plus loin
+                        if (testAngle < -raylib.PI * .25f && testAngle >= -raylib.PI * .75f)
+                            sampleX  = testPoint.x - cast(float)testX;
 
+                        if (testAngle >= raylib.PI * .75f || testAngle < -raylib.PI * .75f)
+                            sampleX  = testPoint.y - cast(float)testY;
                     }
                 }
             }
@@ -161,39 +157,35 @@ void main()
             int ceiling = cast(int)(cast(float)(WINDOW_HEIGHT / 2f) - WINDOW_HEIGHT / (cast(float)distanceToWall));
             int floor = WINDOW_HEIGHT - ceiling;
 
-            ubyte shade = 0;
-            Color wallColor = {0, 255, 0, 255};
             Color floorColor = {125, 125, 125, 255};
             Color ceilingColor = {200, 200, 200, 255};
 
-            // calcul de la profondeur en relation avec la distance du mur; plus c'est loind, plus c'est foncé.
+            ubyte shade = 0;
+
+            // calcul de la profondeur en relation avec la distance du mur; plus c'est loin, plus c'est foncé.
             for (float f = 15f; f > 0f; --f)
                 if (distanceToWall > depth / f)
                     shade += 5;
 
-            // changement de l'ombrage en diminuant l'opacité
-            wallColor.a -= shade;
-
             for (int y = 0; y < WINDOW_HEIGHT; ++y)
             {
-                auto distanceTopBottom = 1f - ((cast(float)y - WINDOW_HEIGHT / 2f) / (cast(float)WINDOW_HEIGHT / 2f));
-
-                if (distanceTopBottom < .2f) shade = 0;
-                else if (distanceTopBottom < .4f) shade = 20;
-                else if (distanceTopBottom < .6f) shade = 50;
-                else if (distanceTopBottom < .8f) shade = 80;
-                else if (distanceTopBottom < 1f) shade = 120;
-                else shade = 255;
-
-                //floorColor.a -= shade;
-                ceilingColor.a -= shade;
-
                 if (y <= ceiling) DrawPixel(x, y, ceilingColor);
-                else if (y > ceiling && y <= floor) DrawPixel(x, y, wallColor);
+
+                else if (y > ceiling && y <= floor)
+                {
+                    auto sampleY = cast(float)(y - ceiling) / cast(float)(floor - ceiling);
+                    auto wallColor = getPixel(&wallImage, cast(int)sampleX, cast(int)sampleY);
+                    wallColor.a -= shade;
+                    DrawPixel(x, y, wallColor);
+                }
+
                 else DrawPixel(x, y, floorColor);
             }
         }
-        DrawFPS(0, 0);
 
+        //DrawTexture(wallTexture, 0, 0, Colors.WHITE);
+        DrawFPS(0, 0);
     }
+
+    wallImage.UnloadImage;
 }
