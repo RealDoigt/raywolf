@@ -109,7 +109,7 @@ void main()
     Entity player = {2f, 1f, .0f};
     const int MAP_HEIGHT = 16, MAP_WIDTH = 16;
 
-    // test unitaires
+    // tests unitaires
 
     assert(player.x == 2f && player.y == 1f && player.angle == 0f);                                            // #1
     assert(wallImage.width == 32 && wallImage.height == 32);                                                   // #2
@@ -118,6 +118,10 @@ void main()
     assert(rotate(10f).x <= -.80f && rotate(10f).x >= -.85f && rotate(10f).y <= .55f && rotate(10f).y >= .5f); // #5
     assert(rotate(20f).x <= .45f && rotate(20f).x >= .40f && rotate(20f).y <= -.9f && rotate(20f).y >= -.95f); // #6
     assert(rotate(7f).x <= .80f && rotate(7f).x >= .75f && rotate(7f).y <= -.7f && rotate(7f).y >= -.65f);     // #7
+    assert(player.Vector2().x == 2f && player.Vector2().y == 1f);                                              // #8
+
+    auto oldPlayer = player;
+    player.move(5f, map, 2f);
 
     ubyte points = 0;
 
