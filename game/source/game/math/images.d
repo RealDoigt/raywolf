@@ -1,4 +1,5 @@
 module game.math.images;
+import game.math.consts;
 import raylib;
 
 int getBPPMultiplier(Image* img)
@@ -23,4 +24,14 @@ Color getPixel(Image* img, int x, int y)
     auto color = GetPixelColor(pixel, img.format);
 
     return color;
+}
+
+Image getImage(char* filePath)
+{
+    auto result = filePath.LoadImage;
+
+    if (result.width != SPRITE_SIZE || result.height != SPRITE_SIZE)
+        ImageResize(&result, SPRITE_SIZE, SPRITE_SIZE);
+
+    return result;
 }

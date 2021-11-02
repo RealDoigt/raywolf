@@ -3,10 +3,10 @@ import raylib;
 
 interface IObserver
 {
-    void react(Vector2 position);
+    void react(Vector2 position, byte[][] map);
 }
 
 interface IObserved
 {
-    void alert();
+    void alert(byte[][] map);
 }

@@ -28,5 +28,19 @@ abstract class Character : Entity
         }
     }
 
+    void strafe(float speed, byte[][] map, float sign)
+    {
+        auto direction = angle.rotate;
+
+        x += sign * direction.y * speed;
+        y -= sign * direction.x * speed;
+
+        if (map[cast(int)y][cast(int)x] > 0)
+        {
+            x -= sign * direction.y * speed;
+            y += sign * direction.x * speed;
+        }
+    }
+
     void attack(Character character);
 }
