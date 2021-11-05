@@ -7,6 +7,7 @@ import actors.observing;
 import actors.character;
 import actors.observing;
 import actors.visible;
+import menu.settings;
 import std.stdio;
 import std.math;
 import raylib;
@@ -25,15 +26,16 @@ enum Behaviours : ubyte
 class Computer : Character, IObserver, IVisible
 {
     private Image* sprite;
-    private float fieldOfView, depth;
+    private float fieldOfView, depth, elapsedTime;
     private Vector2 lastPlayerPosition, originalPosition;
     private auto nextAction = Behaviours.Idle;
     private ubyte fearTolerance, initialHealth;
+    private Sound* attackNoise;
 
     ubyte fearLevel = 0;
     auto range = 2f, speed = 2f;
 
-    this(float x, float y, ubyte health, Image* sprite, float fov, float depth, ubyte fearTolerance)
+    this(float x, float y, ubyte health, Image* sprite, float fov, float depth, ubyte fearTolerance, Sound* attack)
     {
         this.x = x;
         this.y = y;
@@ -41,12 +43,14 @@ class Computer : Character, IObserver, IVisible
         originalPosition.x = x;
         originalPosition.y = y;
 
-        this.health = health;
+        this.health = cast(ubyte)(health + difficulty);
         this.sprite = sprite;
         this.depth = depth;
 
         initialHealth = health;
         fieldOfView = fov;
+
+        attackNoise = attack;
     }
 
     Image* GetSprite()
@@ -104,8 +108,16 @@ class Computer : Character, IObserver, IVisible
         {
             case Behaviours.Attack:
 
-                auto damage = player.GetHealth() - (2 + difficulty);
-                player.SetHealth(damage < 0 ? 0 : cast(ubyte)damage);
+               // elapsedTime += GetFrameTime();
+
+                //if (elapsedTime > .2f)
+               // {
+                    auto damage = player.GetHealth() - (2 + difficulty);
+                    player.SetHealth(damage < 0 ? 0 : cast(ubyte)damage);
+                    PlaySound(*attackNoise);
+                   // elapsedTime = 0;
+               // }
+
                 break;
 
             case Behaviours.Pursue: 
@@ -122,10 +134,5 @@ class Computer : Character, IObserver, IVisible
 
             default: return; // the action of doing nothing, currently used for unimplemented stuff;
         }
-    }
-
-    override void attack(Character character)
-    {
-        // TODO
     }
 }

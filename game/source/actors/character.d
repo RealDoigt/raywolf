@@ -41,6 +41,4 @@ abstract class Character : Entity
             y += sign * direction.x * speed;
         }
     }
-
-    void attack(Character character);
 }

@@ -52,11 +52,6 @@ class Player : Character, IObserved
         alert(map);
     }
 
-    override void attack(Character character)
-    {
-        // TODO
-    }
-
     void addObserver(IObserver io)
     {
         observers ~= io;
@@ -93,11 +88,6 @@ class Player : Character, IObserved
 
         foreach (ref i; keys) result ~= cast(ColorKey)i;
         return result;
-    }
-
-    void openDoor()
-    {
-        // TODO
     }
 
     void alert(byte[][] map)

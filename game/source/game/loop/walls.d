@@ -1,5 +1,6 @@
 module game.loop.walls;
 
+import game.loop.doorinfo;
 import game.math.vectors;
 import game.math.consts;
 import game.math.images;
@@ -7,7 +8,7 @@ import actors.player;
 import std.math;
 import raylib;
 
-void drawWallsAndFloor(Player player, byte[][] map, float halfView, float fieldOfView, int mapWidth, int mapHeight,  float depth, ref float[WINDOW_WIDTH] depthBuffer, Image* wallImage, Image* buffer)
+void drawWallsAndFloor(Player player, byte[][] map, float halfView, float fieldOfView, int mapWidth, int mapHeight,  float depth, ref float[WINDOW_WIDTH] depthBuffer, Image* wallImage, Image* buffer, DoorInfo doorInfo)
 {
     for(int x = 0; x < WINDOW_WIDTH; ++x)
     {
@@ -35,9 +36,10 @@ void drawWallsAndFloor(Player player, byte[][] map, float halfView, float fieldO
             else
             {
                 // Test si le rayon touche un mur
-                if (map[testY][testX] == 1)
+                if (map[testY][testX] > 0)
                 {
                     hitWall = true;
+                    doorInfo.add(distanceToWall, testX, testY, map[testY][testX]);
 
                     // Détermine où le rayon touche le mur
                     auto blockMidX = cast(float)testX + .5f, blockMidY = cast(float)testY + .5f;
