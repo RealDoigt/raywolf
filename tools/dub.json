@@ -1,0 +1,18 @@
+{
+	"authors": [
+		"Doigt"
+	],
+	"copyright": "Copyright © 2021, Doigt",
+	"description": "A game level creation tool for RayWolf",
+	"dependencies": {
+		"raylib-d": "~>3.1.0"
+	},
+	"license": "MIT",
+	"lflags": [
+		"-L./lib"
+	],
+	"libs": [
+		"raylib"
+	],
+	"name": "raywolf-mapmaker"
+}

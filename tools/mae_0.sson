@@ -1,0 +1,57 @@
+player
+.x      = 1
+.y      = 9
+.ammo   = 5
+;
+
+# in the upper left room
+character
+.x      = 4
+.y      = 4
+.health = 2
+;
+
+# other npc in the upper left room
+character
+.x      = 7
+.y      = 4
+.health = 2
+;
+
+# npc in the lower left room
+character
+.x      = 10
+.y      = 12
+.health = 1
+;
+
+# npc in the lower right room
+# will not show up on easy due to 0 health
+character
+.x      = 14
+.y      = 9
+.health = 0
+;
+
+# the fast key which is guarded more heavily
+# in the upper left room
+key
+.x      = 5.5
+.y      = 3.5
+.color  = blue
+;
+
+# the easy key which requires more time to
+# get to the objective
+key
+.x      = 6.5
+.y      = 13.5
+.color  = red
+;
+
+# the final key needed to finish the level
+key
+.x      = 12.5
+.y      = 5.5
+.color  = yellow
+;

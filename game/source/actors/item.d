@@ -36,6 +36,8 @@ class Key : Item
     }
 
     override void UseEffect(Player player) { player.addKey(doorId); }
+
+    byte getKeyId() { return doorId; }
 }
 
 class Heal : Item
@@ -50,6 +52,8 @@ class Heal : Item
     }
 
     override void UseEffect(Player player) { player.SetHealth(cast(ubyte)(player.GetHealth() + effect <= 255 ? player.GetHealth() + effect : 255)); }
+
+    ubyte getEffect() { return effect; }
 }
 
 class Ammunition : Item
@@ -64,4 +68,6 @@ class Ammunition : Item
     }
 
     override void UseEffect(Player player) { player.SetAmmo(cast(ubyte)(player.GetAmmo() + ammo <= 255 ? player.GetAmmo() + ammo : 255)); }
+
+    ubyte getQuantity() { return ammo; }
 }

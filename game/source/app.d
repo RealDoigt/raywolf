@@ -1,4 +1,6 @@
 import std.algorithm.mutation;
+import game.math.statistics;
+import game.loop.gameover;
 import game.loop.doorinfo;
 import game.loop.minimap;
 import game.loop.ceiling;
@@ -97,162 +99,181 @@ void main()
 
     auto doorInfo = new DoorInfo();
 
-    while (!WindowShouldClose())
+    bool paused = false;
+
+    auto killCount = 0;
+
+    while (!WindowShouldClose() && player.GetHealth() > 0)
     {
         ClearBackground(Colors.BLACK);
         BeginDrawing();
 
         scope(exit) EndDrawing();
 
-        auto elapsedTime = GetFrameTime();
-        auto rotationSpeed = elapsedTime * 2f;
-        auto movementSpeed = elapsedTime * 5f;
-        auto hasShot = false, hasHit = false;
+        if (IsKeyReleased(KeyboardKey.KEY_P)) paused = !paused;
 
-        // TODO only update every frame
-        ambience.UpdateMusicStream;
-
-        // Contrôles
-        // S'occupe des rotations
-        if (IsKeyDown(KeyboardKey.KEY_LEFT)) player.angle -= rotationSpeed;
-        if (IsKeyDown(KeyboardKey.KEY_RIGHT)) player.angle += rotationSpeed;
-
-        if (IsKeyDown(KeyboardKey.KEY_W)) player.move(movementSpeed, map, 1f);
-        if (IsKeyDown(KeyboardKey.KEY_S)) player.move(movementSpeed, map, -1f);
-        if (IsKeyDown(KeyboardKey.KEY_D)) player.strafe(movementSpeed, map, 1f);
-        if (IsKeyDown(KeyboardKey.KEY_A)) player.strafe(movementSpeed, map, -1f);
-
-        if (IsKeyReleased(KeyboardKey.KEY_TAB)) miniMapShouldDisplay = !miniMapShouldDisplay;
-
-        if (IsKeyReleased(KeyboardKey.KEY_M))
+        if (!paused)
         {
-            musicShouldPlay = !musicShouldPlay;
+            auto elapsedTime = GetFrameTime();
+            auto rotationSpeed = elapsedTime * 2f;
+            auto movementSpeed = elapsedTime * 5f;
+            auto hasShot = false, hasHit = false;
 
-            if (musicShouldPlay) ambience.ResumeMusicStream;
-            else ambience.PauseMusicStream;
-        }
+            // TODO only update every frame
+            ambience.UpdateMusicStream;
 
-        if (IsKeyReleased(KeyboardKey.KEY_LEFT_CONTROL) && player.GetAmmo() > 0)
-        {
-            hasShot = true;
-            auto newAmmo = player.GetAmmo() - 1;
-            player.SetAmmo(newAmmo >= 0 ? cast(ubyte)newAmmo : 0);
-            playerGunSound.PlaySound;
-        }
+            // Contrôles
+            // S'occupe des rotations
+            if (IsKeyDown(KeyboardKey.KEY_LEFT)) player.angle -= rotationSpeed;
+            if (IsKeyDown(KeyboardKey.KEY_RIGHT)) player.angle += rotationSpeed;
 
-        if (IsKeyReleased(KeyboardKey.KEY_E))
-        {
-            auto door = doorInfo.getDoor(player.getKeys());
+            if (IsKeyDown(KeyboardKey.KEY_W)) player.move(movementSpeed, map, 1f);
+            if (IsKeyDown(KeyboardKey.KEY_S)) player.move(movementSpeed, map, -1f);
+            if (IsKeyDown(KeyboardKey.KEY_D)) player.strafe(movementSpeed, map, 1f);
+            if (IsKeyDown(KeyboardKey.KEY_A)) player.strafe(movementSpeed, map, -1f);
 
-            if (door.type != DoorType.NotDoor)
-                map[door.y][door.x] = 0;
-        }
+            if (IsKeyReleased(KeyboardKey.KEY_TAB)) miniMapShouldDisplay = !miniMapShouldDisplay;
 
-        doorInfo.clear();
-
-        auto halfView = fieldOfView / 2f;
-        auto halfViewCos = halfView.cos;
-
-        auto cameraDirection0 = rotate(player.angle - halfView);
-        auto cameraDirection1 = rotate(player.angle + halfView);
-
-        drawCeiling(cameraDirection0, cameraDirection1, halfViewCos, player, &ceilingImage, &buffer);
-        drawWallsAndFloor(player, map, halfView, fieldOfView, MAP_WIDTH, MAP_HEIGHT, depth, depthBuffer, &wallImage, &buffer, doorInfo);
-
-        // drawing sprites
-        for (int i = 0; i < items.length - 1; ++i)
-        {
-            // est-ce que l'objet peut être vu? distance par rapport au joueur
-            // le vecteur de la différence entre l'objet et le joueur est réutilisé plus tard,
-            // c'est pourquoi c'est fait en deux étapes.
-            Vector2 vector = {(cast(Entity)(items[i])).x - player.x, (cast(Entity)(items[i])).y - player.y};
-            auto distanceToPlayer = sqrt(pow(vector.x, 2) + pow(vector.y, 2));
-
-            auto eye = rotate(player.angle);
-            auto itemAngle = atan2(eye.y, eye.x) - atan2(vector.y, vector.x);
-
-            if (itemAngle < -raylib.PI) itemAngle += TAU;
-            if (itemAngle > raylib.PI) itemAngle -= TAU;
-
-            auto playerCanSee = itemAngle.abs < halfView;
-
-            if (playerCanSee && distanceToPlayer >= 0.5f && distanceToPlayer < depth)
+            if (IsKeyReleased(KeyboardKey.KEY_M))
             {
-                int height = cast(int)(WINDOW_HEIGHT/(cast(float)distanceToPlayer)) >> 1;
-                int ceiling = -height + WINDOW_HALF_HEIGHT;
-                int floor = height + WINDOW_HALF_HEIGHT;
+                musicShouldPlay = !musicShouldPlay;
 
-                auto spriteImage = items[i].GetSprite();
-                auto npc = cast(Computer)items[i];
-
-                // logique de tir et oui je sais que c'est pas jolie
-                if (hasShot && distanceToPlayer <= 4.5f && npc)
-                {
-                    // TODO hurt sound
-                    hasShot = false;
-                    hasHit = true;
-
-                    auto damage = distanceToPlayer <= 1.5f ? 5 : 1;
-                    auto newHealth = npc.GetHealth() - damage;
-
-                    npc.SetHealth(newHealth >= 0 ? cast(ubyte)newHealth : 0);
-                }
-
-                auto itemHeight = floor - ceiling;
-                auto itemAspectRatio = cast(float)spriteImage.height / cast(float)spriteImage.width;
-                auto itemWidth = itemHeight / itemAspectRatio;
-                auto itemMiddle = (.5f * (itemAngle / halfView) + .5f) * cast(float)WINDOW_WIDTH;
-
-                // dessiner sprite
-                for (int x = 0; x < itemWidth; ++x)
-                    for (int y = 0; y < itemHeight; ++y)
-                    {
-                        Vector2 sample = {cast(float)x / itemWidth, cast(float)y / itemHeight};
-
-                        auto color = getPixel(spriteImage, cast(int)(sample.x * spriteImage.width), cast(int)(sample.y * spriteImage.height));
-
-                        if (hasHit) color.r += 25;
-
-                        int itemColumn = cast(int)(itemMiddle + x - itemWidth / 2f);
-
-                        if (color.a == 255 && itemColumn >= 0 && itemWidth < WINDOW_WIDTH && depthBuffer[itemColumn] >= distanceToPlayer)
-                        {
-                            ImageDrawPixel(&buffer, itemColumn, ceiling + y, color);
-                            depthBuffer[itemColumn] = distanceToPlayer;
-                        }
-                    }
+                if (musicShouldPlay) ambience.ResumeMusicStream;
+                else ambience.PauseMusicStream;
             }
-        }
 
-        // setting sprites for deletion.
-        for (int i = cast(int)items.length - 1; i > -1; --i)
-        {
-            // on enlève l'item si le joueur le ramasse et on applique son effet.
-            if (equalsInIndexSpace((cast(Entity)items[i]).toVector2(), player.toVector2()))
-                if (auto item = cast(Item)items[i])
+            if (IsKeyReleased(KeyboardKey.KEY_LEFT_CONTROL) && player.GetAmmo() > 0)
+            {
+                hasShot = true;
+                auto newAmmo = player.GetAmmo() - 1;
+                player.SetAmmo(newAmmo >= 0 ? cast(ubyte)newAmmo : 0);
+                playerGunSound.PlaySound;
+            }
+
+            if (IsKeyReleased(KeyboardKey.KEY_E))
+            {
+                auto door = doorInfo.getDoor(player.getKeys());
+
+                if (door.type != DoorType.NotDoor)
+                    map[door.y][door.x] = 0;
+            }
+
+            doorInfo.clear();
+
+            auto halfView = fieldOfView / 2f;
+            auto halfViewCos = halfView.cos;
+
+            auto cameraDirection0 = rotate(player.angle - halfView);
+            auto cameraDirection1 = rotate(player.angle + halfView);
+
+            drawCeiling(cameraDirection0, cameraDirection1, halfViewCos, player, &ceilingImage, &buffer);
+            drawWallsAndFloor(player, map, halfView, fieldOfView, MAP_WIDTH, MAP_HEIGHT, depth, depthBuffer, &wallImage, &buffer, doorInfo);
+
+            // drawing sprites
+            for (int i = 0; i < items.length - 1; ++i)
+            {
+                // est-ce que l'objet peut être vu? distance par rapport au joueur
+                // le vecteur de la différence entre l'objet et le joueur est réutilisé plus tard,
+                // c'est pourquoi c'est fait en deux étapes.
+                Vector2 vector = {(cast(Entity)(items[i])).x - player.x, (cast(Entity)(items[i])).y - player.y};
+                auto distanceToPlayer = sqrt(pow(vector.x, 2) + pow(vector.y, 2));
+
+                auto eye = rotate(player.angle);
+                auto itemAngle = atan2(eye.y, eye.x) - atan2(vector.y, vector.x);
+
+                if (itemAngle < -raylib.PI) itemAngle += TAU;
+                if (itemAngle > raylib.PI) itemAngle -= TAU;
+
+                auto playerCanSee = itemAngle.abs < halfView;
+
+                if (playerCanSee && distanceToPlayer >= 0.5f && distanceToPlayer < depth)
                 {
-                    indicesToRemove ~= i;
-                    item.UseEffect(player);
+                    int height = cast(int)(WINDOW_HEIGHT/(cast(float)distanceToPlayer)) >> 1;
+                    int ceiling = -height + WINDOW_HALF_HEIGHT;
+                    int floor = height + WINDOW_HALF_HEIGHT;
+
+                    auto spriteImage = items[i].GetSprite();
+                    auto npc = cast(Computer)items[i];
+
+                    // logique de tir et oui je sais que c'est pas jolie
+                    if (hasShot && distanceToPlayer <= 4.5f && npc)
+                    {
+                        // TODO hurt sound
+                        hasShot = false;
+                        hasHit = true;
+
+                        auto damage = distanceToPlayer <= 1.5f ? 5 : 1;
+                        auto newHealth = npc.GetHealth() - damage;
+
+                        npc.SetHealth(newHealth >= 0 ? cast(ubyte)newHealth : 0);
+
+                        // évalué séparement car on pourrait choisir de créer une carte
+                        // avec des npc qui n'apparaient qu'à certains niveaux de difficulté
+                        // on ne voudrait donc pas que ceux-ci comptent.
+                        // De plus, cela fait dès le départ la différence entre ce que le joueur
+                        // tue et ce que le système tue soit par npc qui s'entre attaquent ou par
+                        // autre chose; c'est plus portable pour le futur.
+                        if (!newHealth) ++killCount;
+                    }
+
+                    auto itemHeight = floor - ceiling;
+                    auto itemAspectRatio = cast(float)spriteImage.height / cast(float)spriteImage.width;
+                    auto itemWidth = itemHeight / itemAspectRatio;
+                    auto itemMiddle = (.5f * (itemAngle / halfView) + .5f) * cast(float)WINDOW_WIDTH;
+
+                    // dessiner sprite
+                    for (int x = 0; x < itemWidth; ++x)
+                        for (int y = 0; y < itemHeight; ++y)
+                        {
+                            Vector2 sample = {cast(float)x / itemWidth, cast(float)y / itemHeight};
+
+                            auto color = getPixel(spriteImage, cast(int)(sample.x * spriteImage.width), cast(int)(sample.y * spriteImage.height));
+
+                            if (hasHit) color.r += 25;
+
+                            int itemColumn = cast(int)(itemMiddle + x - itemWidth / 2f);
+
+                            if (color.a == 255 && itemColumn >= 0 && itemWidth < WINDOW_WIDTH && depthBuffer[itemColumn] >= distanceToPlayer)
+                            {
+                                ImageDrawPixel(&buffer, itemColumn, ceiling + y, color);
+                                depthBuffer[itemColumn] = distanceToPlayer;
+                            }
+                        }
                 }
+            }
 
-            if (auto computer = cast(Computer)items[i])
-                if (!computer.GetHealth())
-                    indicesToRemove ~= i;
+            // setting sprites for deletion.
+            for (int i = cast(int)items.length - 1; i > -1; --i)
+            {
+                // on enlève l'item si le joueur le ramasse et on applique son effet.
+                if (equalsInIndexSpace((cast(Entity)items[i]).toVector2(), player.toVector2()))
+                    if (auto item = cast(Item)items[i])
+                    {
+                        indicesToRemove ~= i;
+                        item.UseEffect(player);
+                    }
+
+                if (auto computer = cast(Computer)items[i])
+                    if (!computer.GetHealth())
+                        indicesToRemove ~= i;
+            }
+
+            foreach (i; indicesToRemove) items.remove(i);
+            indicesToRemove.destroy;
+
+            // making npcs do something.
+            foreach (item; items)
+                if (auto npc = cast(Computer)item)
+                    npc.doSomething(map, player, elapsedTime);
+
+            updateMiniMap(map, &miniMap, player);
+            if (miniMapShouldDisplay) drawMiniMap(&buffer, &miniMap);
         }
-
-        foreach (i; indicesToRemove) items.remove(i);
-        indicesToRemove.destroy;
-
-        // making npcs do something.
-        foreach (item; items)
-            if (auto npc = cast(Computer)item)
-                npc.doSomething(map, player, elapsedTime);
-
-        updateMiniMap(map, &miniMap, player);
-        if (miniMapShouldDisplay) drawMiniMap(&buffer, &miniMap);
 
         UpdateTexture(screen, buffer.data);
         DrawTexture(screen, 0, 0, Colors.WHITE);
+
+        if (paused) DrawText("GAME PAUSED", WINDOW_WIDTH >> 3, 70, 70, Colors.DARKGREEN);
 
         // STATS
         DrawFPS(0, 0);
@@ -260,6 +281,8 @@ void main()
         DrawText(format("Munitions: %d", player.GetAmmo()).toStringz(), 0, 35, 16, Colors.WHITE);
         DrawText(format("Clefs: %s", player.getKeys()).toStringz(), 0, 50, 16, Colors.WHITE);
     }
+
+    if (player.GetHealth() == 0) showGameOver(&buffer, &screen);
 
     screen.UnloadTexture;
 
