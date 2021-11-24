@@ -26,9 +26,9 @@ Color getPixel(Image* img, int x, int y)
     return color;
 }
 
-Image getImage(char* filePath)
+Image getImage(string filePath)
 {
-    auto result = filePath.LoadImage;
+    auto result = LoadImage(cast(char*)filePath);
 
     if (result.width != SPRITE_SIZE || result.height != SPRITE_SIZE)
         ImageResize(&result, SPRITE_SIZE, SPRITE_SIZE);

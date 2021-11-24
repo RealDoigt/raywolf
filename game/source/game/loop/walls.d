@@ -8,18 +8,21 @@ import actors.player;
 import std.math;
 import raylib;
 
-void drawWallsAndFloor(Player player, byte[][] map, float halfView, float fieldOfView, int mapWidth, int mapHeight,  float depth, ref float[WINDOW_WIDTH] depthBuffer, Image* wallImage, Image* buffer, DoorInfo doorInfo)
+void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] depthBuffer, Image* wallImage, Image* buffer, DoorInfo doorInfo)
 {
+    auto mapHeight = map.length;
+    auto mapWidth = map[0].length;
+
     for(int x = 0; x < WINDOW_WIDTH; ++x)
     {
         // pour chaque colonne, calcule l'angle du rayon lancé
-        float rayAngle = (player.angle - halfView) + (cast(float)x / cast(float)WINDOW_WIDTH) * fieldOfView;
+        float rayAngle = (player.angle - HALF_VIEW) + (cast(float)x / cast(float)WINDOW_WIDTH) * FIELD_OF_VIEW;
         float distanceToWall = 0f, sampleX = 0f;
 
         auto eye = rayAngle.rotate;
         auto hitWall = false;
 
-        while (!hitWall && distanceToWall < depth)
+        while (!hitWall && distanceToWall < DEPTH)
         {
             distanceToWall += .01f;
 
@@ -30,7 +33,7 @@ void drawWallsAndFloor(Player player, byte[][] map, float halfView, float fieldO
             if (testX < 0 || testX >= mapWidth || testY < 0 || testY >= mapHeight)
             {
                 hitWall = true; // ça fait comme si la profondeur était au max
-                distanceToWall = depth;
+                distanceToWall = DEPTH;
             }
 
             else
