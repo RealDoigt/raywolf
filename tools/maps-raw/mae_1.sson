@@ -1,0 +1,130 @@
+player
+.x = 7
+.y = 29;
+
+# in the room at the bottom left corner
+key
+.x = 2.5
+.y = 29.5
+.color = red;
+
+# in the room at the top left corner
+key
+.x = 8.5
+.y = 5.5
+.color = green;
+
+# the 8 next items are in the bottom right room all aligned in parallel lines
+health
+.x = 27.5
+.y = 23.5
+.value = 20;
+
+health
+.x = 27.5
+.y = 25.5
+.value = 15;
+
+health
+.x = 27.5
+.y = 27.5
+.value = 10;
+
+health
+.x = 27.5
+.y = 29.5;
+
+ammo
+.x = 29.5
+.y = 23.5
+.value = 10;
+
+ammo
+.x = 29.5
+.y = 25.5
+.value = 10;
+
+ammo
+.x = 29.5
+.y = 27.5
+.value = 10;
+
+ammo
+.x = 29.5
+.y = 29.5
+.value = 10;
+
+# in the room just above
+character
+.x = 29
+.y = 9
+.health = 45;
+
+# in the room above that other one
+character
+.x = 21
+.y = 6;
+
+# top left vertical corridor
+character
+.x = 2
+.y = 7
+.health = 2;
+
+ammo
+.x = 5
+.y = 15;
+
+character
+.x = 10
+.y = 13
+.health = 2;
+
+character
+.x = 5
+.y = 10
+.health = 3;
+
+health
+.x = 8.5
+.y = 8.5;
+
+character
+.x = 16
+.y = 11
+.health = 1;
+
+character
+.x = 17
+.y = 10
+.health = 4;
+
+character
+.x = 20
+.y = 20
+.health = 5;
+
+health
+.x = 2.5
+.y = 21.5;
+
+health
+.x = 4.5
+.y = 21.5;
+
+health
+.x = 6.5
+.y = 21.5;
+
+ammo
+.x = 3.5
+.y = 22.5;
+
+ammo
+.x = 5.5
+.y = 22.5;
+
+# right next to the end of the level
+character
+.x = 12
+.y = 16;
