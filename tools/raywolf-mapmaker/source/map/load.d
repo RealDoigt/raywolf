@@ -13,27 +13,6 @@ import std.conv;
 
 import raylib;
 
-bool tryLoadMap(char* file, ref byte[][] map)
-{
-    if (!file.FileExists) return false;
-
-    uint dataSize = 0;
-
-    auto rawMapData = LoadFileData(file, &dataSize);
-    auto height = cast(ubyte)rawMapData[1];
-    auto width = cast(ubyte)rawMapData[0];
-
-    map = new byte[][](height, width);
-
-    for (int y = 0, i = 2; y < height; ++y)
-        for (int x = 0; x < width; ++x, ++i)
-            map[y][x] = cast(byte)rawMapData[i];
-
-    rawMapData.UnloadFileData;
-
-    return true;
-}
-
 void writeUnfinishedError(int lineCount)
 {
     writeln("expected a ; before line %d".format(lineCount));

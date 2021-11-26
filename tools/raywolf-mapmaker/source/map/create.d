@@ -9,10 +9,10 @@ byte colorToByte(Color color)
     if (color == Colors.WHITE) return 1; // mur
 
     // locked doors
-    if (color == Colors.RED) return 10;
-    if (color == Colors.GREEN) return 11;
-    if (color == Colors.BLUE) return 12;
-    if (color == Colors.YELLOW) return 13;
+    if (color.r == 255 && color.g == 0 && color.b == 0) return 10;
+    if (color.r == 0 && color.g == 255 && color.b == 0) return 11;
+    if (color.r == 0 && color.g == 0 && color.b == 255) return 12;
+    if (color.r == 255 && color.g == 255 && color.b == 0) return 13;
 
     // end of level
     if (color.r == 255 && color.g == 255 && color.b == 132) return 30;
