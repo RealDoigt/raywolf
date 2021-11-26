@@ -1,6 +1,7 @@
 module game.loop.walls;
 
 import game.loop.doorinfo;
+import game.loop.walltexture;
 import game.math.vectors;
 import game.math.consts;
 import game.math.images;
@@ -8,7 +9,7 @@ import actors.player;
 import std.math;
 import raylib;
 
-void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] depthBuffer, Image* wallImage, Image* buffer, DoorInfo doorInfo)
+void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] depthBuffer, ref Image[string] images, Image* buffer, DoorInfo doorInfo)
 {
     auto mapHeight = map.length;
     auto mapWidth = map[0].length;
@@ -21,6 +22,7 @@ void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] dept
 
         auto eye = rayAngle.rotate;
         auto hitWall = false;
+        byte hitValue = 0;
 
         while (!hitWall && distanceToWall < DEPTH)
         {
@@ -42,7 +44,9 @@ void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] dept
                 if (map[testY][testX] > 0)
                 {
                     hitWall = true;
-                    doorInfo.add(distanceToWall, testX, testY, map[testY][testX]);
+                    hitValue = map[testY][testX];
+
+                    if (hitValue > 9) doorInfo.add(distanceToWall, testX, testY, hitValue);
 
                     // Détermine où le rayon touche le mur
                     auto blockMidX = cast(float)testX + .5f, blockMidY = cast(float)testY + .5f;
@@ -63,7 +67,7 @@ void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] dept
                     if (testAngle >= raylib.PI * .75f || testAngle < -raylib.PI * .75f)
                         sampleX  = testPoint.y - cast(float)testY;
 
-                    sampleX *= cast(float)wallImage.width;
+                    sampleX *= cast(float)images["wall"].width;
                 }
             }
         }
@@ -84,9 +88,11 @@ void drawWallsAndFloor(Player player, byte[][] map, ref float[WINDOW_WIDTH] dept
             if (y > ceiling && y < floor)
             {
                 auto sampleY = cast(float)(y - ceiling) / cast(float)(floor - ceiling);
+
+                auto wallImage = &images[hitValue.fetchImage];
                 sampleY *= cast(float)wallImage.height;
 
-                auto wallColor = getPixel(wallImage, cast(int)sampleX, cast(int)sampleY);
+                auto wallColor = fetchPixel(hitValue, wallImage, sampleX, sampleY);
                 ImageDrawPixel(buffer, x, y, wallColor);
             }
 

@@ -1,10 +1,12 @@
 module game.loop.doorinfo;
 import actors.player;
+import std.stdio;
 
 enum DoorType : byte
 {
     NotDoor,
     Unlocked,
+    LevelEnd = 30,
     Red      = 10,
     Green    = 11,
     Blue     = 12,
@@ -32,8 +34,9 @@ class DoorInfo
     {
         auto newType = cast(DoorType)value;
 
-        if (value < 10 || value > 29) newType = DoorType.NotDoor;
+        if (value < 10 || value > 30) newType = DoorType.NotDoor;
         else if (value < 30 && value > 19) newType = DoorType.Unlocked;
+        else if (value == 30) newType = DoorType.LevelEnd;
 
         Door newDoor = {distance, newType, x, y};
         doors ~= newDoor;
@@ -52,7 +55,7 @@ class DoorInfo
         {
             if (door.type == DoorType.NotDoor) continue;
 
-            else if (door.type == DoorType.Unlocked)
+            else if (door.type == DoorType.Unlocked || door.type == DoorType.LevelEnd)
             {
                 playerCanOpen ~= door;
                 continue;

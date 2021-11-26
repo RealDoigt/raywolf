@@ -60,8 +60,6 @@ class Computer : Character, IObserver, IVisible
 
     void react(Vector2 target, byte[][] map)
     {
-        // TODO: regarder s'il y a un mur dans le chemin éventuellement.
-
         Vector2 vector = {target.x - x, target.y - y};
 
         auto eye = angle.rotate;
@@ -72,9 +70,9 @@ class Computer : Character, IObserver, IVisible
 
         auto distance = getDistance(toVector2(), target);
 
+        auto canHear = distance < depth && !hitsWall(toVector2(), target, map);
         auto canSee = targetAngle.abs < fieldOfView / 2f;
         auto canAttack = distance <= range;
-        auto canHear = distance < depth;
 
         if (canSee && canHear && canAttack) nextAction = Behaviours.Attack;
         else if (canSee && canHear) nextAction = Behaviours.Pursue;

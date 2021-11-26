@@ -1,6 +1,7 @@
 module game.loop.gameplay;
 
 import std.algorithm.mutation;
+import std.algorithm;
 import game.math;
 import game.loop;
 import actors;
@@ -12,6 +13,8 @@ import raylib;
 
 import menu.preferences;
 import menu.settings;
+
+auto levelCleared = false;
 
 void play(Image* buffer, Texture* screen, byte[][] map, Player player, ref Image[string] images, IVisible[] items)
 {
@@ -83,6 +86,12 @@ void play(Image* buffer, Texture* screen, byte[][] map, Player player, ref Image
             {
                 auto door = doorInfo.getDoor(player.getKeys());
 
+                if (door.type == DoorType.LevelEnd)
+                {
+                    levelCleared = true;
+                    break;
+                }
+
                 if (door.type != DoorType.NotDoor)
                     map[door.y][door.x] = 0;
             }
@@ -93,7 +102,7 @@ void play(Image* buffer, Texture* screen, byte[][] map, Player player, ref Image
             auto cameraDirection1 = rotate(player.angle + HALF_VIEW);
 
             drawCeiling(cameraDirection0, cameraDirection1, HALF_VIEW_COS, player, &images["ceiling"], buffer);
-            drawWallsAndFloor(player, map, depthBuffer, &images["wall"], buffer, doorInfo);
+            drawWallsAndFloor(player, map, depthBuffer, images, buffer, doorInfo);
 
             // drawing sprites
             for (int i = 0; i < items.length - 1; ++i)
@@ -139,7 +148,7 @@ void play(Image* buffer, Texture* screen, byte[][] map, Player player, ref Image
                         // De plus, cela fait dès le départ la différence entre ce que le joueur
                         // tue et ce que le système tue soit par npc qui s'entre attaquent ou par
                         // autre chose; c'est plus portable pour le futur.
-                        if (!newHealth) ++killCount;
+                        if (newHealth <= 0) ++killCount;
                     }
 
                     auto itemHeight = floor - ceiling;
@@ -203,10 +212,12 @@ void play(Image* buffer, Texture* screen, byte[][] map, Player player, ref Image
 
         // STATS
         DrawFPS(0, 0);
-        DrawText(format("Vie: %d", player.GetHealth()).toStringz(), 0, 20, 16, Colors.WHITE);
-        DrawText(format("Munitions: %d", player.GetAmmo()).toStringz(), 0, 35, 16, Colors.WHITE);
-        DrawText(format("Clefs: %s", player.getKeys()).toStringz(), 0, 50, 16, Colors.WHITE);
+        DrawText(format("Vie: %d", player.GetHealth()).toStringz, 0, 20, 16, Colors.WHITE);
+        DrawText(format("Munitions: %d", player.GetAmmo()).toStringz, 0, 35, 16, Colors.WHITE);
+        DrawText(format("Clefs: %s", player.getKeys()).toStringz, 0, 50, 16, Colors.WHITE);
     }
+
+    if (levelCleared) killCount.displayEndLevelScreen;
 
     miniMap.UnloadImage;
 

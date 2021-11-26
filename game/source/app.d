@@ -1,9 +1,14 @@
 import std.algorithm.mutation;
+import std.stdio;
+import std.string;
+
 import game.math.statistics;
 import game.math.images;
 import game.math.consts;
 import game.loop.gameplay;
 import game.loop.gameover;
+
+import map;
 import actors;
 import raylib;
 
@@ -12,6 +17,13 @@ import menu.settings;
 
 void main()
 {
+    string[] levelList;
+    if (!tryLoadLevelList(levelList) && !levelList.length)
+    {
+        "No map found".writeln;
+        return;
+    }
+
     SetTargetFPS(60);
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test");
 
@@ -30,11 +42,20 @@ void main()
     images["key"] = "img/key.png".getImage;
     images["npc"] = "img/npc.png".getImage;
 
-    Texture screen;
+    images["door"] = "img/forest_path.png".getImage;
+    images["locked door"] = "img/locked_forest_path.png".getImage;
+
+    IVisible[] items;
     Player player;
+    byte[][] map;
+
+    Texture screen;
     Image buffer;
 
     drawPreferencesMenu();
+
+    auto currentMapIndex = 0;
+    auto shouldContinue = true;
 
     do
     {
@@ -43,42 +64,31 @@ void main()
         // Texture qui va prendre l'image plus haut et sera dessiné à partir de la vram pour plus de précision et rapidité
         screen = buffer.LoadTextureFromImage;
 
-        player = new Player(2f, 1f, cast(ubyte)(20 - difficulty), 5);
+        if (!tryLoadMapEntities(cast(char*)("maps/%d.mae".format(currentMapIndex)).toStringz, player, items, images, &monsterSound))
+        {
+            "Échec de la génération des entités".writeln;
+            break;
+        }
 
-        byte[][] map =
-        [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 1,12, 1, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0,20, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        ];
+        if (!tryLoadMap(cast(char*)("maps/%d.map".format(currentMapIndex)).toStringz, map))
+        {
+            "Échec de la génération de la carte".writeln;
+            break;
+        }
 
-        IVisible[] items =
-        [
-            new Key(1.5f, 3.5f, &images["key"], 12),
-            new Heal(1.5f, 4.5f, &images["health"], 10),
-            new Ammunition(3.5f, 1.5f, &images["ammo"], 5),
-            cast(IVisible)(new Computer(7.5f, 8.5f, 6, &images["npc"], FIELD_OF_VIEW, 6f, 10, &monsterSound)),
-
-            new Key(0f, 0f, &images["key"], 10) // réparation temporaire en attendant que je trouve comment réparer correctement.
-        ];
-
-        player.addObserver(cast(IObserver)items[3]);
         play(&buffer, &screen, map, player, images, items);
+
+        if (levelCleared)
+        {
+            ++currentMapIndex;
+            levelCleared = false;
+
+            if (currentMapIndex >= levelList.length) shouldContinue = false;
+        }
+
+        else shouldContinue = endGame(&buffer, &screen);
     }
-    while (!player.GetHealth() && endGame(&buffer, &screen));
+    while (shouldContinue);
 
     screen.UnloadTexture;
 

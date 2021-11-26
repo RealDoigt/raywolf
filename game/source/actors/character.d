@@ -18,27 +18,33 @@ abstract class Character : Entity
     {
         auto direction = angle.rotate;
 
-        x += sign * direction.x * speed;
-        y += sign * direction.y * speed;
+        auto resultX = x + sign * direction.x * speed;
+        auto resultY = y + sign * direction.y * speed;
+        int castX = cast(int)resultX, castY = cast(int)resultY;
 
-        if (map[cast(int)y][cast(int)x] > 0)
-        {
-            x -= sign * direction.x * speed;
-            y -= sign * direction.y * speed;
-        }
+        // breaking it down for readability
+        if (castX >= map[0].length || castX < 0) return;
+        if (castY >= map.length || castY < 0) return;
+        if (map[castY][castX] > 0) return;
+
+        x = resultX;
+        y = resultY;
     }
 
     void strafe(float speed, byte[][] map, float sign)
     {
         auto direction = angle.rotate;
 
-        x += sign * direction.y * speed;
-        y -= sign * direction.x * speed;
+        auto resultX = x + sign * direction.y * speed;
+        auto resultY = y - sign * direction.x * speed;
+        int castX = cast(int)resultX, castY = cast(int)resultY;
 
-        if (map[cast(int)y][cast(int)x] > 0)
-        {
-            x -= sign * direction.y * speed;
-            y += sign * direction.x * speed;
-        }
+        // breaking it down for readability
+        if (castX >= map[0].length || castX < 0) return;
+        if (castY >= map.length || castY < 0) return;
+        if (map[castY][castX] > 0) return;
+
+        x = resultX;
+        y = resultY;
     }
 }
