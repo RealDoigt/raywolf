@@ -1,5 +1,5 @@
 # raywolf
-Raywolf was a Wolfenstein-clone engine project made in D using raylib for my ultimate cegep project. If we ignore its very barebones feature set and tooling, the engine has 6 major flaws:
+Raywolf was a Wolfenstein-clone engine project made in D using raylib for my ultimate cegep project. If we ignore its very barebones feature set and tooling, the engine has 7 major flaws:
 1. A mistake in my projection algorithm makes the walls significantly larger than their height, making them look more rectangular than square like in Wolfenstein 3D. On the plus side, this has an interesting effect on ambiance with some textures.
 2. There's a memory leak in my get pixel function. This would normally not be an issue as raylib has its own get pixel, but this was written before that function existed and newer versions of raylib tend to break compatibility with older versions just for the sake of it, so it wasn't really realistic to migrate to 4.0. This memory leak will make the game crash, especially when using large maps.
 3. The NPC thing going on is underdeveleppoed because lack of time. So it goes into walls and walks in straigh lines.
