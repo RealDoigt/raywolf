@@ -6,3 +6,4 @@ Raywolf was a Wolfenstein-clone engine project made in D using raylib for my ult
 4. I was still pretty new to D when I started to work on this project, so it definitely underutilises D's features.
 5. To meet deadlines, the implementation of a lot of things was rushed and need to be rewritten.
 6. My raycasting algorithm is very inefficient. It would be very slow on a limited system. 
+7. There's an out of bounds error somewhere in the code.
